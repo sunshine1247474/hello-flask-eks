@@ -8,6 +8,8 @@
 
 A complete DevOps pipeline: **Terraform → Docker → EKS → Helm → GitHub Actions**
 
+> 📖 **[קרא את מדריך הפריסה המלא (DEPLOYMENT-GUIDE.md)](./DEPLOYMENT-GUIDE.md)** - Step-by-step instructions for deploying and destroying!
+
 ---
 
 ## 📐 Architecture

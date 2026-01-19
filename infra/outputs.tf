@@ -84,12 +84,10 @@ output "private_subnet_id" {
 }
 
 # ============================================
-# S3 Outputs
+# Note: S3 State Bucket
 # ============================================
-output "terraform_state_bucket" {
-  description = "Name of the S3 bucket for Terraform state"
-  value       = aws_s3_bucket.terraform_state.bucket
-}
+# The S3 bucket for Terraform state is created in the
+# bootstrap/ directory and its outputs are there.
 
 # ============================================
 # Useful Commands
