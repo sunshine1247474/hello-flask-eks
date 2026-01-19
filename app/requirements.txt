@@ -1,0 +1,5 @@
+# Python Dependencies
+# Best practice: Pin exact versions for reproducibility
+
+flask==3.0.0
+gunicorn==21.2.0  # Production WSGI server (not Flask's dev server)

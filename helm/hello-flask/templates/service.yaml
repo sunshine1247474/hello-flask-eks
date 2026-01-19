@@ -1,0 +1,55 @@
+# ============================================
+# Kubernetes Service
+# ============================================
+# WHY Service?
+# - Stable endpoint for accessing pods
+# - Load balancing across pods
+# - Service discovery (DNS name)
+#
+# INTERVIEW TIP: "Pods are ephemeral - they come and go.
+# Services provide a stable IP and DNS name that persists
+# regardless of which pods are actually running behind it."
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  # ============================================
+  # Service Type
+  # ============================================
+  # ClusterIP: Internal only (default)
+  # NodePort: Expose on each node's IP
+  # LoadBalancer: Create cloud load balancer (what we use)
+  #
+  # INTERVIEW TIP: "LoadBalancer type creates an AWS ELB/NLB
+  # that routes external traffic to our pods. It's the simplest
+  # way to expose a service publicly."
+  
+  type: {{ .Values.service.type }}
+  
+  # ============================================
+  # Ports
+  # ============================================
+  ports:
+    - port: {{ .Values.service.port }}           # Service port (external)
+      targetPort: {{ .Values.service.targetPort }} # Container port
+      protocol: TCP
+      name: http
+  
+  # ============================================
+  # Selector
+  # ============================================
+  # How Service finds which pods to send traffic to
+  # Must match pod labels in Deployment
+  
+  selector:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}

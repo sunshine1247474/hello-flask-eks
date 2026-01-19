@@ -1,0 +1,138 @@
+# ============================================
+# Kubernetes Deployment
+# ============================================
+# WHY Deployment (not Pod directly)?
+# - Manages replica sets
+# - Rolling updates
+# - Rollback capability
+# - Self-healing (restarts failed pods)
+#
+# INTERVIEW TIP: "We never create Pods directly. Deployments 
+# manage Pods through ReplicaSets. This gives us rolling 
+# updates, rollback, and desired state management."
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  
+  # ============================================
+  # Selector - How Deployment finds its Pods
+  # ============================================
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  
+  # ============================================
+  # Update Strategy
+  # ============================================
+  # WHY RollingUpdate?
+  # - Zero downtime deployments
+  # - Gradual rollout (can catch issues early)
+  # - Automatic rollback on failure
+  #
+  # maxSurge: How many extra pods during update
+  # maxUnavailable: How many pods can be down during update
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero downtime
+  
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    
+    spec:
+      # ============================================
+      # Service Account
+      # ============================================
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- end }}
+      
+      # ============================================
+      # Security Context (Pod Level)
+      # ============================================
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          
+          # ============================================
+          # Ports
+          # ============================================
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          
+          # ============================================
+          # Environment Variables
+          # ============================================
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+          
+          # ============================================
+          # Resource Requests and Limits
+          # ============================================
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          
+          # ============================================
+          # Liveness Probe
+          # ============================================
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          
+          # ============================================
+          # Readiness Probe
+          # ============================================
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+      
+      # ============================================
+      # Node Selector (optional)
+      # ============================================
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

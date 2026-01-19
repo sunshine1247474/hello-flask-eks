@@ -1,0 +1,40 @@
+# ============================================
+# Helm Chart Metadata
+# ============================================
+# WHY Helm?
+# - Package manager for Kubernetes
+# - Templating for multiple environments
+# - Version control for deployments
+# - Easy rollback
+#
+# INTERVIEW TIP: "Helm is like apt or yum for Kubernetes.
+# It packages K8s manifests into reusable charts with 
+# configurable values, making deployments repeatable."
+
+apiVersion: v2
+name: hello-flask
+description: A Helm chart for the Hello Flask DevOps Assignment
+
+# Chart version (changes when chart files change)
+version: 1.0.0
+
+# Application version (changes when app changes)
+appVersion: "1.0.0"
+
+type: application
+
+keywords:
+  - flask
+  - python
+  - devops
+  - assignment
+
+maintainers:
+  - name: DevOps Team
+    email: devops@example.com
+
+# Dependencies (if any)
+# dependencies:
+#   - name: postgresql
+#     version: "12.1.0"
+#     repository: "https://charts.bitnami.com/bitnami"

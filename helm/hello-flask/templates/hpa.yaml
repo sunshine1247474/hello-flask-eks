@@ -1,0 +1,51 @@
+# ============================================
+# Horizontal Pod Autoscaler (HPA)
+# ============================================
+# WHY HPA?
+# - Auto-scale based on CPU/memory usage
+# - Handle traffic spikes automatically
+# - Cost savings during low traffic
+#
+# INTERVIEW TIP: "HPA watches pod metrics and adjusts replica
+# count automatically. When CPU hits 80%, it adds more pods.
+# When traffic drops, it scales down to save resources."
+#
+# Requirements:
+# - Metrics server must be installed
+# - Pods must have resource requests defined
+
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}
+  
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

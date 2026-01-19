@@ -1,0 +1,186 @@
+# ============================================
+# Default Values for Hello Flask Helm Chart
+# ============================================
+# WHY values.yaml?
+# - Single place to configure all settings
+# - Override per environment (dev/staging/prod)
+# - CI/CD can pass values with --set
+#
+# INTERVIEW TIP: "values.yaml is the configuration layer.
+# Same chart, different values = different environments.
+# We use values-dev.yaml, values-prod.yaml for env-specific config."
+
+# ============================================
+# Image Configuration
+# ============================================
+image:
+  repository: "YOUR-ACCOUNT-ID.dkr.ecr.eu-west-1.amazonaws.com/hello-flask-app"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  # pullPolicy options:
+  # - Always: Always pull (good for :latest tags)
+  # - IfNotPresent: Pull only if not cached (good for versioned tags)
+  # - Never: Never pull (use local image)
+
+# ============================================
+# Replica Configuration
+# ============================================
+# WHY multiple replicas?
+# - High availability (one pod fails, others serve)
+# - Load distribution
+# - Zero-downtime deployments
+
+replicaCount: 2
+
+# ============================================
+# Service Configuration
+# ============================================
+# WHY LoadBalancer type?
+# - Assignment requires public access
+# - Creates AWS Classic/Network Load Balancer
+# - Alternative: Ingress with ALB controller
+
+service:
+  type: LoadBalancer
+  port: 80           # External port (what users connect to)
+  targetPort: 5000   # Container port (where app listens)
+
+  # Annotations for AWS Load Balancer
+  annotations:
+    # Use NLB instead of Classic LB (recommended)
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    # Make it internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+# ============================================
+# Resource Limits
+# ============================================
+# WHY set resources?
+# - Prevent resource starvation
+# - Enable better scheduling
+# - Required for HPA (autoscaling)
+#
+# INTERVIEW TIP: "requests are guaranteed, limits are caps.
+# Scheduler uses requests to place pods. If pod exceeds 
+# limit, it gets throttled (CPU) or killed (memory)."
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+
+# ============================================
+# Health Probes
+# ============================================
+# WHY probes?
+# - livenessProbe: Is the container alive? (restart if not)
+# - readinessProbe: Can it receive traffic? (remove from service if not)
+# - startupProbe: Is it still starting? (don't check other probes yet)
+#
+# INTERVIEW TIP: "Without probes, K8s doesn't know if your app
+# is actually working. A container can be running but the app 
+# inside crashed. Probes detect this and trigger restarts."
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 5000
+  initialDelaySeconds: 10    # Wait before first check
+  periodSeconds: 30          # Check every 30s
+  timeoutSeconds: 5          # Timeout for each check
+  failureThreshold: 3        # Failures before restart
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /ready
+    port: 5000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# ============================================
+# Environment Variables
+# ============================================
+env:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: APP_VERSION
+    value: "1.0.0"
+  - name: PORT
+    value: "5000"
+
+# ============================================
+# Pod Labels and Annotations
+# ============================================
+podLabels:
+  app: hello-flask
+  team: devops
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "5000"
+
+# ============================================
+# Security Context
+# ============================================
+# WHY securityContext?
+# - Run as non-root (best practice)
+# - Read-only filesystem
+# - Drop unnecessary capabilities
+#
+# INTERVIEW TIP: "Pod security context enforces security 
+# at the K8s level, not just Docker. Even if Dockerfile 
+# has root, K8s can override it."
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# ============================================
+# Node Selector
+# ============================================
+# Place pods on specific nodes
+# nodeSelector:
+#   node-type: public
+
+# ============================================
+# Ingress (alternative to LoadBalancer)
+# ============================================
+ingress:
+  enabled: false
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+  hosts:
+    - host: hello.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# ============================================
+# Autoscaling (HPA)
+# ============================================
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# ============================================
+# Service Account
+# ============================================
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
