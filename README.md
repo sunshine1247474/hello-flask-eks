@@ -272,7 +272,7 @@ aws s3 rb s3://<bucket-name> --force
 
 ---
 
-## 💡 Interview Questions & Answers
+## 💡 Questions & Answers
 
 ### "Why Terraform instead of CloudFormation?"
 
